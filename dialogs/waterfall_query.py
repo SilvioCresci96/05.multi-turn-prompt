@@ -45,11 +45,11 @@ class WaterfallQuery(ComponentDialog):
         )
         self.add_dialog(ChoicePrompt(ChoicePrompt.__name__))
         self.add_dialog(ConfirmPrompt(ConfirmPrompt.__name__))
-        self.add_dialog(
+        """self.add_dialog(
             AttachmentPrompt(
                 AttachmentPrompt.__name__, WaterfallQuery.picture_prompt_validator
             )
-        )
+        )"""
 
         self.initial_dialog_id = WaterfallDialog.__name__
     

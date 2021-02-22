@@ -1,6 +1,6 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # Licensed under the MIT License.
 
-from .user_profile_dialog import UserProfileDialog
+from .waterfall_main import WaterfallMain
 
-__all__ = ["UserProfileDialog"]
+__all__ = ["WaterfallMain"]
