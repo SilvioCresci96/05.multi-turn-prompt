@@ -20,6 +20,7 @@ from botbuilder.dialogs.prompts import (
 from botbuilder.dialogs.choices import Choice
 from botbuilder.core import MessageFactory, UserState
 
+import FormRecognizer
 import datetime
 
 
@@ -45,11 +46,11 @@ class WaterfallPhoto(ComponentDialog):
         )
         self.add_dialog(ChoicePrompt(ChoicePrompt.__name__))
         self.add_dialog(ConfirmPrompt(ConfirmPrompt.__name__))
-        self.add_dialog(
+        """self.add_dialog(
             AttachmentPrompt(
                 AttachmentPrompt.__name__, WaterfallPhoto.picture_prompt_validator
             )
-        )
+        )"""
 
         self.initial_dialog_id = WaterfallDialog.__name__
     
@@ -66,7 +67,7 @@ class WaterfallPhoto(ComponentDialog):
     async def summary_step(
         self, step_context: WaterfallStepContext
     ) -> DialogTurnResult:
-
+        FormRecognizer.main([r"C:\Users\silvi\Desktop\Università\Cloud\test\1.jpeg"])
         return await step_context.end_dialog()
 
     

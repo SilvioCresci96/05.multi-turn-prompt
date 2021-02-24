@@ -20,6 +20,7 @@ from botbuilder.core import MessageFactory, UserState
 from data_models import UserProfile
 from dialogs.waterfall_query import WaterfallQuery
 from dialogs.waterfall_text import WaterfallText
+from dialogs.waterfall_photo import WaterfallPhoto
 import datetime
 
 class WaterfallMain(ComponentDialog):
@@ -29,6 +30,7 @@ class WaterfallMain(ComponentDialog):
         self.user_profile_accessor = user_state.create_property("UserProfile")
         
         self.add_dialog(WaterfallQuery(WaterfallQuery.__name__))
+        self.add_dialog(WaterfallPhoto(WaterfallPhoto.__name__))
         self.add_dialog(WaterfallText(WaterfallText.__name__))
 
         self.add_dialog(
@@ -65,6 +67,8 @@ class WaterfallMain(ComponentDialog):
 
         if result == "Fattura testuale":
             return await step_context.begin_dialog(WaterfallText.__name__)
+        elif result == "Fattura visiva":
+            return await step_context.begin_dialog(WaterfallPhoto.__name__)
         else:
             return await step_context.replace_dialog(WaterfallMain.__name__)
 
