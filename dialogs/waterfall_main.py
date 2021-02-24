@@ -14,7 +14,8 @@ from botbuilder.dialogs.prompts import (
     PromptValidatorContext,
     DateTimePrompt,
 )
-from botbuilder.dialogs.choices import Choice
+
+from botbuilder.dialogs.choices import Choice, ListStyle
 from botbuilder.core import MessageFactory, UserState
 
 from data_models import UserProfile
@@ -56,6 +57,7 @@ class WaterfallMain(ComponentDialog):
             PromptOptions(
                 prompt=MessageFactory.text(f"Ciao, cosa vuoi fare?"),
                 choices=[Choice("Fattura testuale"), Choice("Fattura visiva"), Choice("Query")],
+                style=ListStyle.hero_card
             ),
         )  
 

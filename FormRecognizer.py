@@ -5,14 +5,14 @@ import getopt
 import sys
 import os
 from requests import get, post
+import datetime
 
 def main(argv):
     input_file, output_file, file_type = getArguments(argv)
     runAnalysis(input_file, output_file, file_type)
 
-def runAnalysis(input_file, output_file, file_type):
-    print(f"UEEEEEE {output_file}")
-    print(f"OIII {file_type}")
+def runAnalysis(input_file, file_type, output_file = None):
+    
     # Endpoint URL
     endpoint = r"https://mybillbot-formrecognizer.cognitiveservices.azure.com/"
     # Subscription Key
@@ -29,13 +29,17 @@ def runAnalysis(input_file, output_file, file_type):
         'Content-Type': file_type,
         'Ocp-Apim-Subscription-Key': apim_key,
     }
-    try:
+    """try:
         with open(input_file, "rb") as f:
             data_bytes = f.read()
     except IOError:
         print("Inputfile not accessible.")
+        sys.exit(2)"""
+    try:
+        data_bytes = input_file
+    except IOError:
+        print("Inputfile not accessible.")
         sys.exit(2)
-
     try:
         print('Initiating analysis...')
         resp = post(url = post_url, data = data_bytes, headers = headers, params = params)
@@ -43,7 +47,7 @@ def runAnalysis(input_file, output_file, file_type):
             print("POST analyze failed:\n%s" % json.dumps(resp.json()))
             quit()
         print("POST analyze succeeded:\n%s" % resp.headers)
-        print
+        
         get_url = resp.headers["operation-location"]
     except Exception as e:
         print("POST analyze failed:\n%s" % str(e))
@@ -68,22 +72,26 @@ def runAnalysis(input_file, output_file, file_type):
                     with open(output_file, 'w') as outfile:
                         json.dump(resp_json, outfile, indent=2, sort_keys=True)
                 #print("Analysis succeeded:\n%s" % json.dumps(resp_json, indent=2, sort_keys=True))
+                returnDict : dict = dict()
+
                 data = resp_json["analyzeResult"]["documentResults"][0]["fields"]["data"]["valueDate"]
                 totale = resp_json["analyzeResult"]["documentResults"][0]["fields"]["totale"]["valueNumber"]
                 print(data)
+                returnDict['data'] = data
                 print(totale)
-                quit()
+                returnDict['totale'] = totale
+                return returnDict
             if status == "failed":
                 print("Analysis failed:\n%s" % json.dumps(resp_json))
-                quit()
+                return None
             # Analysis still running. Wait and retry.
             time.sleep(wait_sec)
             n_try += 1
-            wait_sec = min(2*wait_sec, max_wait_sec)     
+            wait_sec = min(2*wait_sec, max_wait_sec)
         except Exception as e:
             msg = "GET analyze results failed:\n%s" % str(e)
             print(msg)
-            quit()
+            return None
     print("Analyze operation did not complete within the allocated time.")
 
 def getArguments(argv):
