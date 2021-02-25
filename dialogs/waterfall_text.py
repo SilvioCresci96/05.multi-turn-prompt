@@ -16,7 +16,7 @@ from botbuilder.dialogs.prompts import (
 )
 from botbuilder.dialogs.choices import Choice
 from botbuilder.core import MessageFactory, UserState
-
+import requests
 from data_models import UserProfile
 import datetime
 
@@ -28,10 +28,11 @@ class WaterfallText(ComponentDialog):
             WaterfallDialog(
                 WaterfallDialog.__name__,
                 [
-                    #self.what_step,
+                    
                     self.fatturatestuale_step,
                     self.date_step,
                     self.confirm_step,
+                    self.insertdata_step,
                     self.summary_step,
                 ],
             )
@@ -43,29 +44,14 @@ class WaterfallText(ComponentDialog):
         )
         self.add_dialog(ChoicePrompt(ChoicePrompt.__name__))
         self.add_dialog(ConfirmPrompt(ConfirmPrompt.__name__))
-        self.add_dialog(
-            AttachmentPrompt(
-                AttachmentPrompt.__name__, WaterfallText.picture_prompt_validator
-            )
-        )
 
         self.initial_dialog_id = WaterfallDialog.__name__
     
-    async def what_step(
-        self, step_context: WaterfallStepContext
-    ) -> DialogTurnResult:
-        return await step_context.prompt(
-            ChoicePrompt.__name__,
-            PromptOptions(
-                prompt=MessageFactory.text(f"Ciao, cosa vuoi fare?"),
-                choices=[Choice("Fattura testuale"), Choice("Fattura visiva"), Choice("Query")],
-            ),
-        )
 
     async def fatturatestuale_step(self, step_context: WaterfallStepContext) -> DialogTurnResult:
         return await step_context.prompt(
             NumberPrompt.__name__,
-            PromptOptions(prompt=MessageFactory.text("Per favore inserisci l'importo")),
+            PromptOptions(prompt=MessageFactory.text("Per favore inserisci l'importo (o digita 'back' per tornare indietro)")),
         )
         return step_context.next(0)
 
@@ -95,43 +81,19 @@ class WaterfallText(ComponentDialog):
         self, step_context: WaterfallStepContext
     ) -> DialogTurnResult:
         if step_context.result:
-           return await step_context.prompt(
-                TextPrompt.__name__,
-                PromptOptions(prompt=MessageFactory.text("Bella bro")),
-            )
-        return await step_context.prompt(
-                TextPrompt.__name__,
-                PromptOptions(prompt=MessageFactory.text("Cap e cazz")),
-            )
+            r = requests.get(f"http://localhost:7071/api/first_function?funct=insert&totale={step_context.values['amount']}&data={step_context.values['date']}")
+            await step_context.context.send_activity("Ho caricato i dati da te inseriti")
+            return await step_context.end_dialog()
+
+        await step_context.context.send_activity("Prova a reinserire importo e data o decidi cosa vuoi fare")
+        return await step_context.end_dialog()
+        
 
     async def summary_step(
         self, step_context: WaterfallStepContext
     ) -> DialogTurnResult:
 
         return await step_context.end_dialog()
-
-    @staticmethod
-    async def picture_prompt_validator(prompt_context: PromptValidatorContext) -> bool:
-        if not prompt_context.recognized.succeeded:
-            await prompt_context.context.send_activity(
-                "No attachments received. Proceeding without a profile picture..."
-            )
-
-            # We can return true from a validator function even if recognized.succeeded is false.
-            return True
-
-        attachments = prompt_context.recognized.value
-
-        valid_images = [
-            attachment
-            for attachment in attachments
-            if attachment.content_type in ["image/jpeg", "image/png"]
-        ]
-
-        prompt_context.recognized.value = valid_images
-
-        # If none of the attachments are valid images, the retry prompt should be sent.
-        return len(valid_images) > 0
 
 
     @staticmethod

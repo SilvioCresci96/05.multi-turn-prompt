@@ -40,6 +40,7 @@ class WaterfallMain(ComponentDialog):
                 [
                     self.what_step,
                     self.summary_step,
+                    self.replace_step,
                 ],
             )
         )
@@ -65,8 +66,7 @@ class WaterfallMain(ComponentDialog):
     async def summary_step(self, step_context: WaterfallStepContext) -> DialogTurnResult:
         
         result = step_context.result.value
-        await step_context.context.send_activity(MessageFactory.text(result))
-
+        
         if result == "Fattura testuale":
             return await step_context.begin_dialog(WaterfallText.__name__)
         elif result == "Fattura visiva":
@@ -74,7 +74,10 @@ class WaterfallMain(ComponentDialog):
         else:
             return await step_context.replace_dialog(WaterfallMain.__name__)
 
-        return await step_context.end_dialog()    
+        return await step_context.replace_dialog(WaterfallDialog.__name__)    
 
+    async def replace_step(self, step_context: WaterfallStepContext) -> DialogTurnResult:
+
+        return await step_context.replace_dialog(WaterfallDialog.__name__)    
 
     

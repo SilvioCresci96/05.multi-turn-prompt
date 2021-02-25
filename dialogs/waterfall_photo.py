@@ -21,25 +21,22 @@ from botbuilder.dialogs.choices import Choice
 from botbuilder.core import MessageFactory, UserState
 
 from io import BytesIO
-
 import requests
 import FormRecognizer
 import datetime
-
 
 class WaterfallPhoto(ComponentDialog):
     def __init__(self, dialog_id: str = None):
         super(WaterfallPhoto, self).__init__(dialog_id or WaterfallPhoto.__name__)
 
         #self.user_profile_accessor = user_state.create_property("UserProfile")
-
         self.add_dialog(
             WaterfallDialog(
                 WaterfallDialog.__name__,
                 [
                     self.picture_step,
                     self.confirm_step,
-                    self.summary_step,
+                    self.evaluate_data_step,
                 ],
             )
         )
@@ -63,7 +60,7 @@ class WaterfallPhoto(ComponentDialog):
         
         prompt_options = PromptOptions(
             prompt=MessageFactory.text(
-                "Please attach a profile picture (or type any message to skip)."
+                "Invia la foto dello scontrino di chiusura cassa in modo che totale giornaliero e data siano ben visibili (o invia un qualsiasi messaggio per tornare indietro)."
             ),
             retry_prompt=MessageFactory.text(
                 "The attachment must be a jpeg/png image file."
@@ -89,17 +86,21 @@ class WaterfallPhoto(ComponentDialog):
         # with another dialog; here it is a Prompt Dialog.
         return await step_context.prompt(
             ConfirmPrompt.__name__,
-            PromptOptions(prompt=MessageFactory.text(f"Dalla foto ho rilevato l'importo {dati_scontrino['totale']}€ in data {dati_scontrino['data']}")),
+            PromptOptions(prompt=MessageFactory.text(f"Dalla foto ho rilevato l'importo {dati_scontrino['totale']}€ in data {dati_scontrino['data']} è corretto?")),
         )
 
     async def evaluate_data_step(
         self, step_context: WaterfallStepContext
     ) -> DialogTurnResult:
         if step_context.result:
-            pass 
+            dati_scontrino = step_context.values["dati_scontrino"]
+            r = requests.get(f"http://localhost:7071/api/first_function?funct=insert&totale={dati_scontrino['totale']}&data={dati_scontrino['data']}")
+            await step_context.context.send_activity("Ho caricato i dati da te inseriti")
+            return await step_context.end_dialog()
+            
         else:
             await step_context.context.send_activity("Prova a reinviare la foto")
-            await step_context.replace_dialog(WaterfallDialog.__name__)
+            return await step_context.end_dialog()
 
 
     async def summary_step(
@@ -108,8 +109,7 @@ class WaterfallPhoto(ComponentDialog):
         #FormRecognizer.main([r"C:\Users\silvi\Desktop\Università\Cloud\test\1.jpeg"])
         return await step_context.end_dialog()
 
-   
-   
+
     @staticmethod
     async def picture_prompt_validator(prompt_context: PromptValidatorContext) -> bool:
         if not prompt_context.recognized.succeeded:
@@ -118,7 +118,7 @@ class WaterfallPhoto(ComponentDialog):
             )
 
             # We can return true from a validator function even if recognized.succeeded is false.
-            return True
+            return False 
 
         attachments = prompt_context.recognized.value
 
