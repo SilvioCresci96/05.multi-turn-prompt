@@ -15,13 +15,20 @@ from botbuilder.dialogs.prompts import (
     DateTimePrompt,
 )
 
+#from config import DefaultConfig
+
 from botbuilder.dialogs.choices import Choice, ListStyle
 from botbuilder.core import MessageFactory, UserState
 
 from data_models import UserProfile
+from calcolo_importo_recognizer import CalcoloImportoRecognizer
+from dialogs.calcolo_dialog import CalcoloDialog
+
 from dialogs.waterfall_query import WaterfallQuery
 from dialogs.waterfall_text import WaterfallText
 from dialogs.waterfall_photo import WaterfallPhoto
+from config import DefaultConfig
+
 import datetime
 
 class WaterfallMain(ComponentDialog):
@@ -29,8 +36,11 @@ class WaterfallMain(ComponentDialog):
         super(WaterfallMain, self).__init__(WaterfallMain.__name__)
     
         self.user_profile_accessor = user_state.create_property("UserProfile")
+
+        luisRecognizer = CalcoloImportoRecognizer(configuration=DefaultConfig)
+        calcoloDialog = CalcoloDialog()
         
-        self.add_dialog(WaterfallQuery(WaterfallQuery.__name__))
+        self.add_dialog(WaterfallQuery(luis_recognizer=luisRecognizer, calcolo_dialog=calcoloDialog))
         self.add_dialog(WaterfallPhoto(WaterfallPhoto.__name__))
         self.add_dialog(WaterfallText(WaterfallText.__name__))
 
@@ -67,10 +77,14 @@ class WaterfallMain(ComponentDialog):
         
         result = step_context.result.value
         
+
         if result == "Fattura testuale":
             return await step_context.begin_dialog(WaterfallText.__name__)
         elif result == "Fattura visiva":
             return await step_context.begin_dialog(WaterfallPhoto.__name__)
+        elif result == "Query":
+            
+            return await step_context.begin_dialog(WaterfallQuery.__name__)
         else:
             return await step_context.replace_dialog(WaterfallMain.__name__)
 

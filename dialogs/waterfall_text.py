@@ -51,7 +51,7 @@ class WaterfallText(ComponentDialog):
     async def fatturatestuale_step(self, step_context: WaterfallStepContext) -> DialogTurnResult:
         return await step_context.prompt(
             NumberPrompt.__name__,
-            PromptOptions(prompt=MessageFactory.text("Per favore inserisci l'importo (o digita 'back' per tornare indietro)")),
+            PromptOptions(prompt=MessageFactory.text("Per favore inserisci l'importo")),
         )
         return step_context.next(0)
 
@@ -59,6 +59,9 @@ class WaterfallText(ComponentDialog):
     async def date_step(
         self, step_context: WaterfallStepContext
     ) -> DialogTurnResult:
+        if step_context.result == "back":
+            return await step_context.end_dialog()
+            
         step_context.values["amount"] = step_context.result
         self.var = True
         return await step_context.prompt(
@@ -81,7 +84,7 @@ class WaterfallText(ComponentDialog):
         self, step_context: WaterfallStepContext
     ) -> DialogTurnResult:
         if step_context.result:
-            r = requests.get(f"http://localhost:7071/api/first_function?funct=insert&totale={step_context.values['amount']}&data={step_context.values['date']}")
+            r = requests.get(f"http://localhost:7071/api/first_function?id_utente={step_context.context.activity.from_property.id}&funct=insert&totale={step_context.values['amount']}&data={step_context.values['date']}")
             await step_context.context.send_activity("Ho caricato i dati da te inseriti")
             return await step_context.end_dialog()
 

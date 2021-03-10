@@ -15,7 +15,6 @@ from botbuilder.dialogs.prompts import (
     AttachmentPrompt,
     PromptOptions,
     PromptValidatorContext,
-    DateTimePrompt,
 )
 from botbuilder.dialogs.choices import Choice
 from botbuilder.core import MessageFactory, UserState
@@ -23,7 +22,7 @@ from botbuilder.core import MessageFactory, UserState
 from io import BytesIO
 import requests
 import FormRecognizer
-import datetime
+from datetime import datetime
 
 class WaterfallPhoto(ComponentDialog):
     def __init__(self, dialog_id: str = None):
@@ -74,6 +73,8 @@ class WaterfallPhoto(ComponentDialog):
             image = step_context.result[0]
         res: Response = requests.get(image.content_url)
 
+        await step_context.context.send_activity("Sto analizzando...")
+        
         dati_scontrino = FormRecognizer.runAnalysis(input_file = BytesIO(res.content), file_type = image.content_type)
 
         if dati_scontrino is None:
@@ -82,11 +83,15 @@ class WaterfallPhoto(ComponentDialog):
         
         step_context.values["dati_scontrino"] = dati_scontrino
 
+        data = dati_scontrino['data']
+        tempData = str(data).replace("-","")
+        data = datetime.strptime(tempData, '%Y%m%d').strftime('%d-%m-%Y')
+
         # WaterfallStep always finishes with the end of the Waterfall or
         # with another dialog; here it is a Prompt Dialog.
         return await step_context.prompt(
             ConfirmPrompt.__name__,
-            PromptOptions(prompt=MessageFactory.text(f"Dalla foto ho rilevato l'importo {dati_scontrino['totale']}€ in data {dati_scontrino['data']} è corretto?")),
+            PromptOptions(prompt=MessageFactory.text(f"Dalla foto ho rilevato l'importo {dati_scontrino['totale']}€ in data {data} è corretto?")),
         )
 
     async def evaluate_data_step(
@@ -94,7 +99,12 @@ class WaterfallPhoto(ComponentDialog):
     ) -> DialogTurnResult:
         if step_context.result:
             dati_scontrino = step_context.values["dati_scontrino"]
-            r = requests.get(f"http://localhost:7071/api/first_function?funct=insert&totale={dati_scontrino['totale']}&data={dati_scontrino['data']}")
+
+            data = dati_scontrino['data']
+            tempData = str(data).replace("-","")
+            data = datetime.strptime(tempData, '%Y%m%d').strftime('%d-%m-%Y')
+
+            r = requests.get(f"http://localhost:7071/api/first_function?id_utente={step_context.context.activity.from_property.id}&funct=insert&totale={dati_scontrino['totale']}&data={data}")
             await step_context.context.send_activity("Ho caricato i dati da te inseriti")
             return await step_context.end_dialog()
             

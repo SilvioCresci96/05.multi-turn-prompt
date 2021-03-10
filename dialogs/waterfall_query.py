@@ -19,15 +19,25 @@ from botbuilder.dialogs.prompts import (
 )
 from botbuilder.dialogs.choices import Choice
 from botbuilder.core import MessageFactory, UserState
+from botbuilder.schema import InputHints
+
+from calcolo_importo_recognizer import CalcoloImportoRecognizer
+from dialogs.calcolo_dialog import CalcoloDialog
+from invoice_details import InvoiceDetails
+from helpers.luis_helper import LuisHelper, Intent
+from config import DefaultConfig
 
 import datetime
 
 
 class WaterfallQuery(ComponentDialog):
-    def __init__(self, dialog_id: str = None):
-        super(WaterfallQuery, self).__init__(dialog_id or WaterfallQuery.__name__)
+    def __init__(self, luis_recognizer: CalcoloImportoRecognizer, calcolo_dialog: CalcoloDialog):
+        super(WaterfallQuery, self).__init__(WaterfallQuery.__name__)
 
         #self.user_profile_accessor = user_state.create_property("UserProfile")
+        self._luis_recognizer = luis_recognizer
+        self._calcolo_dialog_id = calcolo_dialog.id
+        self.add_dialog(calcolo_dialog)
 
         self.add_dialog(
             WaterfallDialog(
@@ -38,6 +48,7 @@ class WaterfallQuery(ComponentDialog):
                 ],
             )
         )
+       
         self.add_dialog(TextPrompt(TextPrompt.__name__))
         #self.add_dialog(TextPrompt(TextPrompt.__name__, WaterfallQuery.insertCorrectdate))
         self.add_dialog(
@@ -63,10 +74,34 @@ class WaterfallQuery(ComponentDialog):
     
    
 
-    async def summary_step(
-        self, step_context: WaterfallStepContext
-    ) -> DialogTurnResult:
+    async def summary_step(self, step_context: WaterfallStepContext) -> DialogTurnResult:
+        if not self._luis_recognizer.is_configured:
+        
+            # LUIS is not configured, we just run the BookingDialog path with an empty BookingDetailsInstance.
+            return await step_context.begin_dialog(
+                self._calcolo_dialog_id, InvoiceDetails()
+            )
 
+        # Call LUIS and gather any potential booking details. (Note the TurnContext has the response to the prompt.)
+        recognizer = CalcoloImportoRecognizer(configuration=DefaultConfig)
+        intent, luis_result = await LuisHelper.execute_luis_query(recognizer, step_context.context)
+        
+        
+        if intent == Intent.CALCOLO_IMPORTO.value and luis_result:
+
+            # Run the BookingDialog giving it whatever details we have from the LUIS call.
+            return await step_context.begin_dialog(self._calcolo_dialog_id, luis_result)
+
+        else:
+            didnt_understand_text = (
+                "Sorry, I didn't get that. Please try asking in a different way"
+            )
+            didnt_understand_message = MessageFactory.text(
+                didnt_understand_text, didnt_understand_text, InputHints.ignoring_input
+            )
+            await step_context.context.send_activity(didnt_understand_message)
+
+        return await step_context.next(None)
         return await step_context.end_dialog()
 
     
