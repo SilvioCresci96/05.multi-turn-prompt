@@ -22,6 +22,7 @@ from botbuilder.core import MessageFactory, UserState
 from botbuilder.schema import InputHints
 
 from calcolo_importo_recognizer import CalcoloImportoRecognizer
+from dialogs.cancella_dialogo import CancellaDialogo
 from dialogs.calcolo_dialog import CalcoloDialog
 from invoice_details import InvoiceDetails
 from helpers.luis_helper import LuisHelper, Intent
@@ -31,12 +32,15 @@ import datetime
 
 
 class WaterfallQuery(ComponentDialog):
-    def __init__(self, luis_recognizer: CalcoloImportoRecognizer, calcolo_dialog: CalcoloDialog):
+    def __init__(self, luis_recognizer: CalcoloImportoRecognizer, calcolo_dialog: CalcoloDialog, cancella_dialogo: CancellaDialogo):
         super(WaterfallQuery, self).__init__(WaterfallQuery.__name__)
 
         #self.user_profile_accessor = user_state.create_property("UserProfile")
         self._luis_recognizer = luis_recognizer
         self._calcolo_dialog_id = calcolo_dialog.id
+        self._cancella_dialogo_id = cancella_dialogo.id
+        
+        self.add_dialog(cancella_dialogo)
         self.add_dialog(calcolo_dialog)
 
         self.add_dialog(
@@ -89,8 +93,12 @@ class WaterfallQuery(ComponentDialog):
         
         if intent == Intent.CALCOLO_IMPORTO.value and luis_result:
 
-            # Run the BookingDialog giving it whatever details we have from the LUIS call.
             return await step_context.begin_dialog(self._calcolo_dialog_id, luis_result)
+
+        elif intent == Intent.CANCEL.value and luis_result:
+
+            return await step_context.begin_dialog(self._cancella_dialogo_id, luis_result)
+
 
         else:
             didnt_understand_text = (

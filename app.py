@@ -2,9 +2,12 @@
 # Licensed under the MIT License.
 
 import sys
+import uuid
 import traceback
 from datetime import datetime
 from http import HTTPStatus
+from typing import Dict
+import json
 
 from aiohttp import web
 from aiohttp.web import Request, Response, json_response
@@ -23,6 +26,8 @@ from config import DefaultConfig
 from dialogs.waterfall_query import WaterfallQuery
 from bots import DialogBot
 from dialogs.waterfall_main import WaterfallMain
+from botbuilder.schema import Activity, ActivityTypes, ConversationReference
+
 
 
 CONFIG = DefaultConfig()
@@ -69,6 +74,10 @@ async def on_error(context: TurnContext, error: Exception):
 # In this case, we want an unbound method, so MethodType is not needed.
 ADAPTER.on_turn_error = on_error
 
+# Create a shared dictionary.  The Bot will add conversation references when users
+# join the conversation and send messages.
+CONVERSATION_REFERENCES: Dict[str, ConversationReference] = dict()
+
 # Create MemoryStorage, UserState and ConversationState
 MEMORY = MemoryStorage()
 CONVERSATION_STATE = ConversationState(MEMORY)
@@ -76,11 +85,14 @@ USER_STATE = UserState(MEMORY)
 
 # create main dialog and bot
 DIALOG = WaterfallMain(USER_STATE)
-BOT = DialogBot(CONVERSATION_STATE, USER_STATE, DIALOG)
+BOT = DialogBot(CONVERSATION_STATE, USER_STATE, DIALOG, CONVERSATION_REFERENCES)
 
 
-COUNT = 0
 
+# If the channel is the Emulator, and authentication is not in use, the AppId will be null.
+# We generate a random AppId for this case only. This is not required for production, since
+# the AppId will have a value.
+APP_ID = SETTINGS.app_id if SETTINGS.app_id else uuid.uuid4()
 
 # Listen for incoming requests on /api/messages.
 async def messages(req: Request) -> Response:
@@ -100,8 +112,34 @@ async def messages(req: Request) -> Response:
     return Response(status=HTTPStatus.OK)
 
 
+# Listen for requests on /api/notify, and send a messages to all conversation members.
+async def notify(req: Request) -> Response:  # pylint: disable=unused-argument
+    intera = req.query_string
+    separatore = intera.index('&')
+    id_utente = intera[:separatore]
+    media = intera[separatore+1:]
+    await _send_proactive_message(userID = id_utente, tot= media)
+    return Response(status=HTTPStatus.OK, text=f"La media del fatturato del mese scorso è di {req.query_string}€ al giorno!")
+
+
+# Send a message to all conversation members.
+# This uses the shared Dictionary that the Bot adds conversation references to.
+async def _send_proactive_message(userID: str = None, tot : str = None):
+    for conversation_reference in CONVERSATION_REFERENCES.values():
+        user_id = conversation_reference.user.id
+        if user_id == userID:
+            await ADAPTER.continue_conversation(
+                conversation_reference,
+                lambda turn_context: turn_context.send_activity(f"La media del fatturato del mese scorso è di {tot}€ al giorno!"),
+                APP_ID,
+            )
+
+
 APP = web.Application(middlewares=[aiohttp_error_middleware])
 APP.router.add_post("/api/messages", messages)
+APP.router.add_get("/api/notify", notify)
+
+
 
 if __name__ == "__main__":
     try:

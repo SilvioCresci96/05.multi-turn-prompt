@@ -84,7 +84,7 @@ class WaterfallText(ComponentDialog):
         self, step_context: WaterfallStepContext
     ) -> DialogTurnResult:
         if step_context.result:
-            r = requests.get(f"http://localhost:7071/api/first_function?id_utente={step_context.context.activity.from_property.id}&funct=insert&totale={step_context.values['amount']}&data={step_context.values['date']}")
+            r = requests.get(f"https://mybillbotfirstfunction.azurewebsites.net/api/first_function?id_utente={step_context.context.activity.from_property.id}&funct=insert&totale={step_context.values['amount']}&data={step_context.values['date']}")
             await step_context.context.send_activity("Ho caricato i dati da te inseriti")
             return await step_context.end_dialog()
 

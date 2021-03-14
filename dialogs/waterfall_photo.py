@@ -64,6 +64,7 @@ class WaterfallPhoto(ComponentDialog):
             retry_prompt=MessageFactory.text(
                 "The attachment must be a jpeg/png image file."
             ),
+            number_of_attempts=1
         )
         return await step_context.prompt(AttachmentPrompt.__name__, prompt_options)
 
@@ -104,7 +105,7 @@ class WaterfallPhoto(ComponentDialog):
             tempData = str(data).replace("-","")
             data = datetime.strptime(tempData, '%Y%m%d').strftime('%d-%m-%Y')
 
-            r = requests.get(f"http://localhost:7071/api/first_function?id_utente={step_context.context.activity.from_property.id}&funct=insert&totale={dati_scontrino['totale']}&data={data}")
+            r = requests.get(f"https://mybillbotfirstfunction.azurewebsites.net/api/first_function?id_utente={step_context.context.activity.from_property.id}&funct=insert&totale={dati_scontrino['totale']}&data={data}")
             await step_context.context.send_activity("Ho caricato i dati da te inseriti")
             return await step_context.end_dialog()
             

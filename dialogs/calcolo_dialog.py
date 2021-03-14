@@ -61,13 +61,17 @@ class CalcoloDialog(CancelAndHelpDialog):
         # Capture the response to the previous step's prompt
         invoice_details.date = step_context.result
         if invoice_details.date is not None:
-            r = requests.get(f"http://localhost:7071/api/first_function?id_utente={step_context.context.activity.from_property.id}&funct=getForDate&data={invoice_details.date}")
+            r = requests.get(f"https://mybillbotfirstfunction.azurewebsites.net/api/first_function?id_utente={step_context.context.activity.from_property.id}&funct=getForDate&data={invoice_details.date}")
 
-            await step_context.context.send_activity(f"Nel giorno {invoice_details.date} hai fatturato {r.text}€")
+            if r.text is not None and r.text != "":
+                await step_context.context.send_activity(f"Nel giorno {invoice_details.date} hai fatturato {r.text}€")
+            else:
+                await step_context.context.send_activity(f"Nel giorno {invoice_details.date} non ci sono fatture registrate")
+
         
         elif invoice_details.date is None:
             
-            r = requests.get(f"http://localhost:7071/api/first_function?id_utente={step_context.context.activity.from_property.id}&funct=getForPeriod&period={invoice_details.periodo}")
+            r = requests.get(f"https://mybillbotfirstfunction.azurewebsites.net/api/first_function?id_utente={step_context.context.activity.from_property.id}&funct=getForPeriod&period={invoice_details.periodo}")
             if r.text == "" or r.text is None:
                 await step_context.context.send_activity(f"Non sono presenti fatture nel periodo di '{invoice_details.periodo}'")
             else:

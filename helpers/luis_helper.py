@@ -10,7 +10,7 @@ from invoice_details import InvoiceDetails
 
 class Intent(Enum):
     CALCOLO_IMPORTO = "CalcoloImporto"
-    CANCEL = "Cancel"
+    CANCEL = "CancellaImporto"
     GET_WEATHER = "GetWeather"
     NONE_INTENT = "NoneIntent"
 
@@ -68,6 +68,19 @@ class LuisHelper:
                 if len(periodo_entities) > 0:
                     if recognizer_result.entities.get("Periodo", [{"$instance": {}}])[0][0]:
                         result.periodo = periodo_entities[0]["text"].capitalize()
+
+            elif intent == Intent.CANCEL.value:
+                result = InvoiceDetails()
+
+                date_entities = recognizer_result.entities.get("$instance", {}).get(
+                    "Data", []
+                )
+                if len(date_entities) > 0:
+                    if recognizer_result.entities.get("Data", [{"$instance": {}}])[0][0]:
+                        result.date = date_entities[0]["text"].capitalize()
+
+
+                
 
         except Exception as exception:
             print(exception)

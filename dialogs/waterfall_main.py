@@ -23,6 +23,7 @@ from botbuilder.core import MessageFactory, UserState
 from data_models import UserProfile
 from calcolo_importo_recognizer import CalcoloImportoRecognizer
 from dialogs.calcolo_dialog import CalcoloDialog
+from dialogs.cancella_dialogo import CancellaDialogo
 
 from dialogs.waterfall_query import WaterfallQuery
 from dialogs.waterfall_text import WaterfallText
@@ -39,8 +40,9 @@ class WaterfallMain(ComponentDialog):
 
         luisRecognizer = CalcoloImportoRecognizer(configuration=DefaultConfig)
         calcoloDialog = CalcoloDialog()
+        cancellaDialogo = CancellaDialogo()
         
-        self.add_dialog(WaterfallQuery(luis_recognizer=luisRecognizer, calcolo_dialog=calcoloDialog))
+        self.add_dialog(WaterfallQuery(luis_recognizer=luisRecognizer, calcolo_dialog=calcoloDialog, cancella_dialogo=cancellaDialogo))
         self.add_dialog(WaterfallPhoto(WaterfallPhoto.__name__))
         self.add_dialog(WaterfallText(WaterfallText.__name__))
 
