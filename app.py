@@ -111,19 +111,6 @@ async def messages(req: Request) -> Response:
         return json_response(data=response.body, status=response.status)
     return Response(status=HTTPStatus.OK)
 
-def init_func(argv):
-    APP = web.Application(middlewares=[aiohttp_error_middleware])
-    APP.router.add_post("/api/messages", messages)
-    APP.router.add_get("/api/notify", notify)
-    return APP
-
-if __name__ == "__main__":
-    APP = init_func(None)
-    try:
-        web.run_app(APP, host="localhost", port=CONFIG.PORT)
-    except Exception as error:
-        raise error
-
 
 # Listen for requests on /api/notify, and send a messages to all conversation members.
 async def notify(req: Request) -> Response:  # pylint: disable=unused-argument
@@ -147,8 +134,17 @@ async def _send_proactive_message(userID: str = None, tot : str = None):
                 APP_ID,
             )
 
+def init_func(argv):
+    APP = web.Application(middlewares=[aiohttp_error_middleware])
+    APP.router.add_post("/api/messages", messages)
+    APP.router.add_get("/api/notify", notify)
 
-APP = web.Application(middlewares=[aiohttp_error_middleware])
-APP.router.add_post("/api/messages", messages)
-APP.router.add_get("/api/notify", notify)
+    return APP
+
+if __name__ == "__main__":
+    APP = init_func(None)
+    try:
+        web.run_app(APP, host="localhost", port=CONFIG.PORT)
+    except Exception as error:
+        raise error
 
