@@ -62,6 +62,7 @@ class DialogBot(ActivityHandler):
         self._add_conversation_reference(turn_context.activity)
         return await super().on_conversation_update_activity(turn_context)
 
+
     async def on_members_added_activity(
         self, members_added: [ChannelAccount], turn_context: TurnContext
     ):

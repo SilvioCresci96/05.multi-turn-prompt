@@ -119,10 +119,10 @@ def init_func(argv):
 
 if __name__ == "__main__":
     APP = init_func(None)
-try:
-    web.run_app(APP, host="localhost", port=CONFIG.PORT)
-except Exception as error:
-    raise error
+    try:
+        web.run_app(APP, host="localhost", port=CONFIG.PORT)
+    except Exception as error:
+        raise error
 
 
 # Listen for requests on /api/notify, and send a messages to all conversation members.
@@ -152,8 +152,3 @@ APP = web.Application(middlewares=[aiohttp_error_middleware])
 APP.router.add_post("/api/messages", messages)
 APP.router.add_get("/api/notify", notify)
 
-if __name__ == "__main__":
-    try:
-        web.run_app(APP, host="localhost", port=CONFIG.PORT)
-    except Exception as error:
-        raise error
