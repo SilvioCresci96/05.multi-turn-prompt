@@ -96,7 +96,7 @@ APP_ID = SETTINGS.app_id if SETTINGS.app_id else uuid.uuid4()
 
 # Listen for incoming requests on /api/messages.
 async def messages(req: Request) -> Response:
-    # Main bot message handler.
+
     if "application/json" in req.headers["Content-Type"]:
         body = await req.json()
     else:
@@ -106,7 +106,6 @@ async def messages(req: Request) -> Response:
     auth_header = req.headers["Authorization"] if "Authorization" in req.headers else ""
 
     response = await ADAPTER.process_activity(activity, auth_header, BOT.on_turn)
-
     if response:
         return json_response(data=response.body, status=response.status)
     return Response(status=HTTPStatus.OK)
@@ -115,7 +114,7 @@ async def messages(req: Request) -> Response:
 # Listen for requests on /api/notify, and send a messages to all conversation members.
 async def notify(req: Request) -> Response:  # pylint: disable=unused-argument
     intera = req.query_string
-    separatore = intera.index('&')
+    separatore = intera.index('&media=')
     id_utente = intera[:separatore]
     media = intera[separatore+7:]
     await _send_proactive_message(userID = id_utente, tot= media)
