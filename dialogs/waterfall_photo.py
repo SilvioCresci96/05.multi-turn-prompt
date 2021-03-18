@@ -64,7 +64,7 @@ class WaterfallPhoto(ComponentDialog):
             retry_prompt=MessageFactory.text(
                 "The attachment must be a jpeg/png image file."
             ),
-            number_of_attempts=1
+            number_of_attempts=0,
         )
         return await step_context.prompt(AttachmentPrompt.__name__, prompt_options)
 
