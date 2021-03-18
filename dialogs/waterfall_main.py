@@ -70,7 +70,7 @@ class WaterfallMain(ComponentDialog):
             PromptOptions(
                 prompt=MessageFactory.text(f"Ciao, cosa vuoi fare?"),
                 choices=[Choice("Fattura testuale"), Choice("Fattura visiva"), Choice("Query")],
-                style=ListStyle.hero_card
+                #style=ListStyle.hero_card
             ),
         )  
 
